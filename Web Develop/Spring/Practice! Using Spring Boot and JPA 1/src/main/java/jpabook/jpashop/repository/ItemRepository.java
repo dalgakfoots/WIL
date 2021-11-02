@@ -17,7 +17,9 @@ public class ItemRepository {
         if (item.getId() == null) {
             em.persist(item); // 신규등록
         } else {
-            em.merge(item);
+            em.merge(item); // 준영속상태의 객체를 영속상태 객체로 변경하면서 속성 변경
+
+            //병합 시, 모든 속성이 변경 되기 떄문에 null 처리를 정확히 해야한다.
         }
     }
 
