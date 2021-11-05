@@ -1,5 +1,6 @@
 package jpabook.jpashop.service;
 
+import jpabook.jpashop.domain.item.Book;
 import jpabook.jpashop.domain.item.Item;
 import jpabook.jpashop.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,17 @@ public class ItemService {
     @Transactional
     public void saveItem(Item item) {
         itemRepository.save(item);
+    }
+
+    @Transactional // 로직 끝난 후 Transaction commit -> JPA가 flush 진행
+    public Item updateItem(Long itemId, Book param) {
+        // 영속상태임
+        Item findItem = itemRepository.findOne(itemId);
+        // JPA Dirty Checking
+        findItem.setPrice(param.getPrice());
+        findItem.setName(param.getName());
+        findItem.setStockQuantity(param.getStockQuantity());
+        return findItem;
     }
 
     public List<Item> findItems() {
