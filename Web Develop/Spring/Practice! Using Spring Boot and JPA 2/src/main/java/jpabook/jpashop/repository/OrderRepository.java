@@ -101,9 +101,19 @@ public class OrderRepository {
                 " join fetch o.delivery d", Order.class).getResultList();
     }
 
+    public List<Order> findAllWithMemberDelivery(int offset, int limit) {
+        return em.createQuery("select o from Order o" +
+                " join fetch o.member m " +
+                " join fetch o.delivery d", Order.class)
+                .setFirstResult(offset)
+                .setMaxResults(limit)
+                .getResultList();
+    }
+
     public List<Order> findAllWithItem() {
         // distinct 키워드 사용
         // DB 쿼리에 distinct 를 추가하여 실행 -> JPA 가 어플리케이션 레벨에서 중복 객체 제거
+        // => but 실제로 쿼리가 실행되고, 실행된 결과가 어플리케이션으로 들어옴. (최적화된 쿼리가 아니기 때문에 데이터 전송량 많을 가능성 높음)
         // 페이징 불가
         // 1개 이상의 컬렉션 조인은 금지 <- 1:n:m
         return em.createQuery(
