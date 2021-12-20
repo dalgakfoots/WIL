@@ -28,6 +28,26 @@ public class OrderApiController {
     private final OrderRepository orderRepository;
     private final OrderQueryRepository orderQueryRepository;
 
+    /*
+    *
+    *  -- 권장 순서 --
+    * 1. 엔티티 조회 방식으로 우선 접근
+    *   1. 페치조인으로 쿼리 수를 최적화
+    *   2. 컬렉션 최적화
+    *       1. 페이징 필요 : hibernate.default_batch_fetch_size, @BatchSize 로 최적화
+    *       2. 페이징 필요 X : 페치 조인 사용
+    *
+    * 2. 엔티티 조회 방식으로 해결이 안되면 DTO 조회 방식(JPQL) 사용
+    *
+    * 3. DTO 조회 방식으로 해결이 안되면 NativeSQL 이나 스프링 JDBCTemplate 사용
+    *
+    *  -- DTO 조회 방식의 선택지 --
+    *
+    * V4 : 코드가 단순. / N + 1 문제 발생 가능성 높음
+    * V5 : 쿼리 실행 횟수가 1 + 1 로 최적화 되어 있음 / 코드가 복잡함.
+    * V6 : 쿼리가 한번만 실행 됨 / 접근방식이 다른 방법과 조금 다름. 루트(Order)를 기준으로 페이징이 불가능하다.
+    * */
+
     @GetMapping("/api/v1/orders")
     public List<Order> ordersV1() {
         List<Order> all = orderRepository.findAllByString(new OrderSearch());
