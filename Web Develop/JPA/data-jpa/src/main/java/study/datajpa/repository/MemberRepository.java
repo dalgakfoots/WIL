@@ -1,5 +1,7 @@
 package study.datajpa.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -7,6 +9,7 @@ import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MemberRepository extends JpaRepository<Member , Long> { // 엔티티 , 엔티티 Id 타입
 
@@ -20,4 +23,17 @@ public interface MemberRepository extends JpaRepository<Member , Long> { // 엔�
 
     @Query("select new study.datajpa.dto.MemberDto(m.id , m.username, t.name) from Member m join m.team t")
     List<MemberDto> findMemberDto();
+
+    List<Member> findListByUsername(String username); // 컬렉션
+    Member findMemberByUsername(String username);  // 단건
+    Optional<Member> findOptionalByUsername(String username); // 단건 Optional
+
+    /*
+    * Spring Data JPA 페이징
+    * */
+
+//    @Query(value = "select m from Member m left join m.team t" ,
+//            countQuery = "select count(m) from Member m" // Count Query를 별도로 설정
+//    )
+    Page<Member> findByAge(int age, Pageable pageable);
 }

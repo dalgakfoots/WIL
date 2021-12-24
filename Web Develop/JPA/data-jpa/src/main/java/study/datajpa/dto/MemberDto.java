@@ -15,4 +15,9 @@ public class MemberDto {
         this.username = username;
         this.teamName = teamName;
     }
+
+    public MemberDto(Long id, String username) {
+        this.id = id;
+        this.username = username;
+    }
 }
