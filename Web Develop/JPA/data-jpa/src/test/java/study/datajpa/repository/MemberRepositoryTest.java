@@ -174,4 +174,17 @@ class MemberRepositoryTest {
         assertThat(page.hasNext()).isTrue();
     }
 
+    @Test
+    public void bulkUpdate(){
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 19));
+        memberRepository.save(new Member("member3", 20));
+        memberRepository.save(new Member("member4", 21));
+        memberRepository.save(new Member("member5", 40));
+
+        // 벌크 연산 시, 영속성 컨텍스트 내의 데이터와 DB 내의 데이터가 차이가 날 수 있으니 주의!
+        int resultCount = memberRepository.bulkAgePlus(20);
+        assertThat(resultCount).isEqualTo(3);
+    }
+
 }
