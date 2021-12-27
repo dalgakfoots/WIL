@@ -1,5 +1,6 @@
 package study.querydsl;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,5 +67,104 @@ public class QueryDslBasicTest {
         assertThat(findMember.getUsername()).isEqualTo("member1");
     }
 
+    /*
+    * 검색 조건 쿼리
+    *
+    * */
+
+    @Test
+    public void search(){
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(
+                        member.username.eq("member1")
+                                .and(member.age.eq(10))
+                )
+                .fetchOne();
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    @Test
+    public void searchAndParam(){
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where( // and 조건인 경우 콤마로 구분하여 작성 가능. null 이 들어갈 경우 null 을 무시한다.
+                        member.username.eq("member1"),
+                        member.age.eq(10)
+                )
+                .fetchOne();
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    /*
+    * 결과 조회
+    *
+    * */
+    @Test
+    public void resultFetch(){
+        List<Member> fetch = queryFactory
+                .selectFrom(member)
+                .fetch();
+
+        Member member = queryFactory.selectFrom(QMember.member)
+                .where(QMember.member.username.eq("member1"))
+                .fetchOne();
+
+        Member fetchFirst = queryFactory.selectFrom(QMember.member)
+                .fetchFirst();
+                //.limit(1).fetchOne 과 동일하게 동작한다;
+
+        QueryResults<Member> results = queryFactory.selectFrom(QMember.member)
+                .fetchResults();
+
+        List<Member> content = results.getResults();
+
+        long count = queryFactory.selectFrom(QMember.member)
+                .fetchCount();
+
+    }
+
+    /*
+    * 정렬
+    * 1. 회원 나이 내림차순
+    * 2. 회원 이름 올림차순
+    * 단 , 회원 이름이 없으면 마지막에 출력 (nulls last)
+    * */
+    @Test
+    public void sort(){
+        em.persist(new Member(null, 100));
+        em.persist(new Member("member5", 100));
+        em.persist(new Member("member6", 100));
+
+        List<Member> members = queryFactory
+                .selectFrom(member)
+                .where(member.age.eq(100))
+                .orderBy(member.age.desc(), member.username.asc().nullsLast())
+                .fetch();
+
+        Member member5 = members.get(0);
+        Member member6 = members.get(1);
+        Member memberNull = members.get(2);
+
+        assertThat(member5.getUsername()).isEqualTo("member5");
+        assertThat(member6.getUsername()).isEqualTo("member6");
+        assertThat(memberNull.getUsername()).isNull();
+    }
+
+
+    /*
+    *
+    * 페이징
+    * */
+    @Test
+    public void paging1(){
+        List<Member> result = queryFactory.selectFrom(member)
+                .orderBy(member.username.desc())
+                .offset(1)
+                .limit(2)
+                .fetch();
+
+        assertThat(result.size()).isEqualTo(2);
+    }
 
 }
