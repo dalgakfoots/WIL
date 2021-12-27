@@ -1,6 +1,7 @@
 package study.querydsl;
 
 import com.querydsl.core.QueryResults;
+import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
+import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
@@ -17,18 +19,19 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static study.querydsl.entity.QMember.member;
+import static study.querydsl.entity.QTeam.team;
 
 @SpringBootTest
 @Transactional
 public class QueryDslBasicTest {
-    
+
     @Autowired
     EntityManager em;
 
     JPAQueryFactory queryFactory;
 
     @BeforeEach
-    public void before(){
+    public void before() {
         queryFactory = new JPAQueryFactory(em);
         Team teamA = new Team("teamA");
         Team teamB = new Team("teamB");
@@ -43,9 +46,9 @@ public class QueryDslBasicTest {
         em.persist(member3);
         em.persist(member4);
     }
-    
+
     @Test
-    public void startJPQL(){
+    public void startJPQL() {
         //find member1
         String qlString = "select m from Member m " +
                 "where m.username = :username";
@@ -57,7 +60,7 @@ public class QueryDslBasicTest {
     }
 
     @Test
-    public void startQuerydsl(){
+    public void startQuerydsl() {
         Member findMember = queryFactory
                 .select(member)
                 .from(member)
@@ -68,12 +71,12 @@ public class QueryDslBasicTest {
     }
 
     /*
-    * 검색 조건 쿼리
-    *
-    * */
+     * 검색 조건 쿼리
+     *
+     * */
 
     @Test
-    public void search(){
+    public void search() {
         Member findMember = queryFactory
                 .selectFrom(member)
                 .where(
@@ -85,7 +88,7 @@ public class QueryDslBasicTest {
     }
 
     @Test
-    public void searchAndParam(){
+    public void searchAndParam() {
         Member findMember = queryFactory
                 .selectFrom(member)
                 .where( // and 조건인 경우 콤마로 구분하여 작성 가능. null 이 들어갈 경우 null 을 무시한다.
@@ -97,11 +100,11 @@ public class QueryDslBasicTest {
     }
 
     /*
-    * 결과 조회
-    *
-    * */
+     * 결과 조회
+     *
+     * */
     @Test
-    public void resultFetch(){
+    public void resultFetch() {
         List<Member> fetch = queryFactory
                 .selectFrom(member)
                 .fetch();
@@ -112,7 +115,7 @@ public class QueryDslBasicTest {
 
         Member fetchFirst = queryFactory.selectFrom(QMember.member)
                 .fetchFirst();
-                //.limit(1).fetchOne 과 동일하게 동작한다;
+        //.limit(1).fetchOne 과 동일하게 동작한다;
 
         QueryResults<Member> results = queryFactory.selectFrom(QMember.member)
                 .fetchResults();
@@ -125,13 +128,13 @@ public class QueryDslBasicTest {
     }
 
     /*
-    * 정렬
-    * 1. 회원 나이 내림차순
-    * 2. 회원 이름 올림차순
-    * 단 , 회원 이름이 없으면 마지막에 출력 (nulls last)
-    * */
+     * 정렬
+     * 1. 회원 나이 내림차순
+     * 2. 회원 이름 올림차순
+     * 단 , 회원 이름이 없으면 마지막에 출력 (nulls last)
+     * */
     @Test
-    public void sort(){
+    public void sort() {
         em.persist(new Member(null, 100));
         em.persist(new Member("member5", 100));
         em.persist(new Member("member6", 100));
@@ -153,11 +156,11 @@ public class QueryDslBasicTest {
 
 
     /*
-    *
-    * 페이징
-    * */
+     *
+     * 페이징
+     * */
     @Test
-    public void paging1(){
+    public void paging1() {
         List<Member> result = queryFactory.selectFrom(member)
                 .orderBy(member.username.desc())
                 .offset(1)
@@ -165,6 +168,55 @@ public class QueryDslBasicTest {
                 .fetch();
 
         assertThat(result.size()).isEqualTo(2);
+    }
+
+    /*
+     *
+     * 집합
+     * */
+    @Test
+    public void aggregation() {
+        List<Tuple> result = queryFactory.select(
+                        member.count(),
+                        member.age.avg(),
+                        member.age.sum(),
+                        member.age.max(),
+                        member.age.min()
+                )
+                .from(member)
+                .fetch();
+
+        Tuple tuple = result.get(0);
+        assertThat(tuple.get(member.count())).isEqualTo(4);
+        assertThat(tuple.get(member.age.sum())).isEqualTo(100);
+        assertThat(tuple.get(member.age.avg())).isEqualTo(25);
+        assertThat(tuple.get(member.age.min())).isEqualTo(10);
+        assertThat(tuple.get(member.age.max())).isEqualTo(40);
+    }
+
+    /*
+    *
+    * 팀의 이름과 각 팀의 평균 연령
+    * */
+    @Test
+    public void group(){
+        List<Tuple> result = queryFactory.select(team.name, member.age.avg())
+                .from(member)
+                .join(member.team, team)
+                .groupBy(team.name)
+                .fetch();
+
+        Tuple teamA = result.get(0);
+        Tuple teamB = result.get(1);
+
+        assertThat(teamA.get(team.name)).isEqualTo("teamA");
+        assertThat(teamA.get(member.age.avg())).isEqualTo(15);
+
+        assertThat(teamB.get(team.name)).isEqualTo("teamB");
+        assertThat(teamB.get(member.age.avg())).isEqualTo(35);
+
+
+
     }
 
 }
