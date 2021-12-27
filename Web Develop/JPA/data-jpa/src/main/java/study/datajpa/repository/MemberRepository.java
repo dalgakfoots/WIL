@@ -12,7 +12,7 @@ import javax.persistence.QueryHint;
 import java.util.List;
 import java.util.Optional;
 
-public interface MemberRepository extends JpaRepository<Member , Long> { // 엔티티 , 엔티티 Id 타입
+public interface MemberRepository extends JpaRepository<Member , Long> , MemberRepositoryCustom { // 엔티티 , 엔티티 Id 타입
 
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age); // 필드명 변경 시, 메서드 이름도 변경해야 함.
 
