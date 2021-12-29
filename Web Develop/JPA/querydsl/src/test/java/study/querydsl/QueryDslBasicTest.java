@@ -694,4 +694,44 @@ public class QueryDslBasicTest {
         return usernameEq(usernameCond).and(ageEq(ageCond));
     }
 
+    /*
+    * 벌크 연산 (수정 , 삭제)
+    * */
+
+    @Test
+    public void bulkUpdate(){
+
+        //member1, member2
+
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.loe(20))
+                .execute();
+
+        assertThat(count).isEqualTo(2);
+
+        // 벌크연산 시, 영속성 컨텍스트와 값이 달라질 가능성이 높다.
+        // 방지하기 위해 영속성 컨텍스트를 flush 와 clear 시켜준다
+        em.flush();
+        em.clear();
+    }
+
+    @Test
+    public void bulkAdd() {
+        queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1))
+                // 빼고 싶을땐 ? -> member.age.add(-1)
+                // 곱하고 싶을땐 ? -> member.age.multiply(2)
+                .execute();
+    }
+
+    @Test
+    public void bulkDelete(){
+        queryFactory
+                .delete(member)
+                .where(member.age.gt(18))
+                .execute();
+    }
 }
